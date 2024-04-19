@@ -60,6 +60,9 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
     model.train()
 
     t0 = time.time()
+    start_time = time.time()
+
+    max_duration = 3 * 60 * 60 ## 3 hours
     
     if rng_state_dict is not  None:
         torch.set_rng_state(rng_state_dict["cpu_rng_state"])
@@ -70,7 +73,14 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         get_batch(data_train_iter, device=extra_args.device)
 
     
-    while itr < iterations:
+    #while itr < iterations:
+    while True:
+
+        elapsed_time = time.time() - start_time
+
+        if elapsed_time > max_duration:
+            print("Reached the 3-hour time limit. Stopping training.")
+            break
             
         for microstep_idx in range(acc_steps):  # gradient accumulation
             x, y = get_batch(data_train_iter, device=extra_args.device)
