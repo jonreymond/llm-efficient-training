@@ -14,11 +14,13 @@
 
 ### Base model (number of parameters: 123.59M)
 
-Time per iter:
+Time per iter (batch_size:32, grad_acc:4):
 
 vanilla: 424 ms
 
 compiled model: 380 ms (11% gain)
+
+compiled model (batch size 64, grad_acc:4): 730.54 ms
 
 ### Llama2 (number of parameters: 123.98M)
 
