@@ -2,4 +2,5 @@ compile: True
 grad_clip: 1.0
 save_checkpoint_freq: 100
 wandb_project: "lauzhack-llm"
-wandb: False
+wandb: True
+n_layer: 10

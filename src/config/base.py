@@ -78,7 +78,8 @@ def parse_args(base_parser, args, namespace):
 
             for key,value in cfg.items():
                 ## don't apply config if config has been explcitly overriden
-                if getattr(args, key) == parser.get_default(key):
+                config_val = getattr(args, key, "not_exist")
+                if config_val == "not_exist" or config_val == parser.get_default(key):
                     args.__setattr__(key,value)
             
     # The main arg parser parses the rest of the args, the usual

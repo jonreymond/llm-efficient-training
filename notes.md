@@ -40,6 +40,11 @@ compiled => 76* 1.11 = 84M params
 
 
 
+### Running
+
+base_smallish.yaml [running]
+
+
 
 
 ### Defaults
