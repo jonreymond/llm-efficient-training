@@ -7,8 +7,8 @@ save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
 wandb: True
 n_layer: 10
-opt: "adamw"
-weight_decay: 0.1
+opt: "sofiag"
+weight_decay: 0.2
 lr: 1.e-3
-#rho: 0.05
-run_prefix: "noam_"
+rho: 0.05
+run_prefix: "noam_sofiag"
