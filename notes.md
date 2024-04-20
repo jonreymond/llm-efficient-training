@@ -62,6 +62,8 @@ noam_small [sandbox]
 https://wandb.ai/entropyy/lauzhack-llm/runs/ljxg01g5?nw=nwuserentropyy - noam.yaml - val pp: 22.96
 
 
+
+
 ```
 model: "noam"
 weight_tying: True
@@ -80,6 +82,11 @@ run_prefix: "noam_"
 
 ```
 
+
+### things to tune
+
+- lr
+- warmup
 
 
 
