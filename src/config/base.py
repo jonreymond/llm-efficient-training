@@ -28,8 +28,11 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument('--weight_decay', default=0.1, type=float)
     parser.add_argument('--beta1', default=0.9, type=float)
     parser.add_argument('--beta2', default=0.95, type=float)
+    parser.add_argument("--rho", default=0.05, type=float) #sofiag parameter
+    parser.add_argument("--hessian_interval", default=10, type=int) # sofiag parameter
     parser.add_argument('--scheduler', default='cos', choices=['linear', 'cos', 'none'])
-    parser.add_argument('--opt', default='adamw', choices=['adamw', 'sgd'])
+    parser.add_argument('--opt', default='adamw', choices=['adamw', 'sgd', "sophiag"])
+
     parser.add_argument('--eval_freq', default=200, type=int) # in iterations
     parser.add_argument('--results_base_folder', default="./exps", type=str) 
     parser.add_argument('--grad_clip', default=0.0, type=float) # default value is 1.0 in NanoGPT
@@ -38,7 +41,8 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument('--vocab_size', default=50304, type=int)
     parser.add_argument('--data_in_ram', action='store_true') # force the data to RAM, mostly useless except for openwebtext2 
     # Model params
-    parser.add_argument('--model', default='base', choices=['base', 'llama2'])
+    parser.add_argument('--model', default='base', choices=['base', 'llama2', 'noam'])
+    parser.add_argument("--weight_tying", action="store_true", default=False)
     parser.add_argument('--use_pretrained', default="auto", type=none_or_str) # 'none', 'gpt-2' or a path to the pretraind model
     parser.add_argument('--dropout', default=0.0, type=float)
     parser.add_argument('--n_head', default=12, type=int)

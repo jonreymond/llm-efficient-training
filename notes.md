@@ -42,8 +42,14 @@ compiled => 76* 1.11 = 84M params
 
 ### Running
 
-base_smallish.yaml [running on sandbox]
+base_smallish.yaml [running on sandbox] https://wandb.ai/entropyy/lauzhack-llm/runs/bw3mzelg?nw=nwuserentropyy
 
+
+
+
+### Best config yet
+
+src/main.py --config src/config/sofiag_small.yaml
 
 
 

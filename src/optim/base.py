@@ -19,6 +19,9 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         device_type=device_type, dtype=torch.bfloat16)  # extra_args.dtype)
     best_val_loss, text_table = float('inf'), None # best_val_loss not used atm, early stopping not recommended but possible 
     substep = itr * acc_steps
+
+    ## getting the data
+
     data["train"], train_sampler = get_dataloader(
         data["train"],
         sequence_length=sequence_length,
@@ -59,9 +62,10 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
     model.train()
 
+
+    ## setting up time
     t0 = time.time()
     start_time = time.time()
-
     max_duration = 3 * 60 * 60 ## 3 hours
     
     if rng_state_dict is not  None:
@@ -92,6 +96,8 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             loss = outputs['loss'] / acc_steps
             loss.backward()
             substep += 1
+
+            ## checking if we have done a full epoch
             if substep % len(data["train"]) == 0:
                 train_epochs += 1
                 print(f"Train epoch {train_epochs} done (full pass over training data)")
@@ -106,10 +112,42 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
         if extra_args.grad_clip != 0.0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), extra_args.grad_clip)
+
         opt.step()
         scheduler.step()
         opt.zero_grad(set_to_none=True)
         itr += 1
+
+
+        ## update hessian if using sofiag
+        if extra_args.opt == "sofiag" and (itr % extra_args.hessian_interval == 0):
+            for microstep_idx in range(acc_steps):  # gradient accumulation
+                x, y = get_batch(data_train_iter, device=extra_args.device)
+                
+                with type_ctx:
+                    with distributed_backend.get_context_for_microstep_forward(model=model, microstep_idx=microstep_idx, gradient_accumulation_steps=acc_steps):
+                        outputs = model(x, targets=y, get_logits=True)
+
+                ## estimating the hessian
+                logits = outputs["logits"]
+                samp_dist = torch.distributions.Categorical(logits=logits)
+                y_sample = samp_dist.sample()
+                loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y_sample.view(-1), ignore_index=-1)
+                loss =  loss / acc_steps
+                loss.backward()
+                substep += 1
+
+
+            if extra_args.grad_clip != 0.0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), extra_args.grad_clip)
+
+            opt.update_hessian()
+            # flush the gradients as soon as we can, no need for this memory anymore
+            opt.zero_grad(set_to_none=True)
+
+                
+
+
 
         if itr % eval_freq == 0 or itr == iterations: # from here it's only evaluation code, all the training is above
             if distributed_backend.is_master_process():
@@ -167,6 +205,8 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
                 model.train()
                 t0 = time.time()
+        
+        ## saving checkpoints
         if distributed_backend.is_master_process():
             if extra_args.save_checkpoint_freq is not None and itr % extra_args.save_checkpoint_freq == 0:
                 print(f"saving checkpoint to {os.path.dirname(ckpt_path)}/ckpt_{itr}.pt")
@@ -182,6 +222,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                                 train_sampler_state=sampler_state_before_iter,
                                 ckpt_path=os.path.join(os.path.dirname(ckpt_path), f"ckpt_{itr}.pt"))
                 
+    ## saving checkpoints
     if distributed_backend.is_master_process():
         print(f"saving checkpoint to {ckpt_path}")
         save_checkpoint(distributed_backend=distributed_backend,

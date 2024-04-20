@@ -1,6 +1,13 @@
 import torch
-from .llama import Llama, RMSNorm
+from .llama import Llama
 from .base import GPTBase, LayerNorm
+
+from .noam import Noam
+
+from common import RMSNorm
+
+
+
 
 
 BLACKLIST_WEIGHT_MODULES = (
@@ -19,5 +26,7 @@ def get_model(args):
     elif args.model == 'llama2':
         model = Llama(args)
         return model
+    elif args.model == "noam":
+        model = Noam(args)
     else:
         raise KeyError(f"Unknown model '{args.model}'.")

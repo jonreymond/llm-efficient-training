@@ -13,6 +13,7 @@ import config
 from models.utils import get_model
 from data.utils import get_dataset
 from optim.base import train_base
+from optim.sofia import SophiaG
 import distributed
 
 
@@ -72,8 +73,14 @@ def main(args):
         extra_args = dict(fused=True) if use_fused else dict()
         opt = torch.optim.AdamW(group_specs, lr=args.lr, betas=(args.beta1, args.beta2),
                                 weight_decay=args.weight_decay, **extra_args)
-    else:
+    elif args.opt == "sgd":
         opt = torch.optim.SGD(group_specs, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
+    elif args.opt == "sofiag":
+        opt = SophiaG(group_specs, lr=args.lr, betas=(args.beta1, args.beta2),
+                                weight_decay=args.weight_decay, rho=args.rho)
+        
+    else:
+        raise NotImplementedError(f"{args.opt} optimizer doesn't exist")
     
     if args.scheduler != 'none':
         if args.scheduler in ['cos', 'linear']:
@@ -135,7 +142,7 @@ def main(args):
             scheduler_state_dict = checkpoint['scheduler']
             scheduler.load_state_dict(scheduler_state_dict)
 
-    if args.model in ['base', 'llama2']: # all train functions have the same interface
+    if args.model in ['base', 'llama2', 'noam']: # all train functions have the same interface
         train = train_base
     else:
         raise NotImplementedError(f"No training method implemented for model type '{args.model}'.")

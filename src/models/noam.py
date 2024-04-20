@@ -21,6 +21,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from models.base import CausalSelfAttention, GPTBase
+
 from common import RMSNorm
 
 
@@ -56,6 +57,9 @@ def apply_rotary_emb(q, k, freqs_cis):
     xq_out = torch.view_as_real(q_ * freqs_cis).flatten(3)
     xk_out = torch.view_as_real(k_ * freqs_cis).flatten(3)
     return xq_out.type_as(q), xk_out.type_as(k)
+
+
+
 
 
 
@@ -134,7 +138,7 @@ class LlamaBlock(nn.Module):
         return x
 
 
-class Llama(GPTBase):
+class Noam(GPTBase):
     def __init__(self, config):
         super().__init__(config)
         assert config.vocab_size is not None
@@ -160,9 +164,10 @@ class Llama(GPTBase):
         # "UserWarning: functional_call was passed multiple values for tied weights.
         # This behavior is deprecated and will be an error in future versions"
         # not 100% sure what this is, so far seems to be harmless. TODO investigate
-        self.transformer.wte.weight = (
-            self.lm_head.weight
-        )  # https://paperswithcode.com/method/weight-tying
+        if self.config.weight_tying:
+            self.transformer.wte.weight = (
+                self.lm_head.weight
+            )  # https://paperswithcode.com/method/weight-tying
 
         # init all weights
         self.apply(self._init_weights)

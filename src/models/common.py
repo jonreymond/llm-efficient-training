@@ -1,0 +1,44 @@
+import math
+
+import tiktoken
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+
+
+
+class RMSNorm(nn.Module):
+    """
+    Implements Root Mean Square Normalization introduced in
+    https://arxiv.org/pdf/1910.07467.pdf.
+
+    Reference implementation (used for correctness verfication)
+    can be found here:
+    https://github.com/facebookresearch/llama/blob/main/llama/model.py
+
+    Args:
+        dim (int): embedding size
+        eps (float): small value to avoid division by zero. Default: 1e-6
+    """
+
+    def __init__(self, dim: int, eps: float = 1e-6) -> None:
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x):
+        """
+        Args:
+            x (Tensor): input tensor to normalize
+
+        Returns:
+            Tensor: The output tensor after applying RMSNorm.
+        """
+        # computation is in fp32
+        x_fp32 = x.float()
+        x_normed = (
+            x_fp32 * torch.rsqrt(x_fp32.pow(2).mean(-1, keepdim=True) + self.eps)
+        ).type_as(x)
+        return x_normed * self.weight
+

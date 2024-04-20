@@ -1,0 +1,12 @@
+compile: True
+grad_clip: 1.0
+save_checkpoint_freq: 500
+wandb_project: "lauzhack-llm"
+wandb: True
+n_layer: 10
+opt: "sofiag"
+weight_decay: 0.2
+lr: 7.e-4
+rho: 0.05
+run_prefix: "sofiag"
+weight_tying: True

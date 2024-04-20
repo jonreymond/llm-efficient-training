@@ -1,0 +1,14 @@
+model: "noam"
+weight_tying: False
+
+compile: False
+grad_clip: 1.0
+save_checkpoint_freq: 500
+wandb_project: "lauzhack-llm"
+wandb: True
+n_layer: 8
+opt: "sofiag"
+weight_decay: 0.2
+lr: 1.e-3
+rho: 0.05
+run_prefix: "noam_sofiag"
