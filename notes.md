@@ -28,6 +28,15 @@ compiled model (batch size 64, grad_acc:4): 730.54 ms
 
 vanilla: 555.99 ms
 
+#### Noam (number of parameters: 109.82M, n_layer=10)
+
+Time per iter:
+
+vanilla: 495 ms
+
+rope fixed + compiled: 440 ms (12.5 % speedup)
+
+
 
 ### Compute-optimal
 
