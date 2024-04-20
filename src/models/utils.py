@@ -4,7 +4,7 @@ from .base import GPTBase, LayerNorm
 
 from .noam import Noam
 
-from common import RMSNorm
+from .common import RMSNorm
 
 
 
@@ -27,6 +27,9 @@ def get_model(args):
         model = Llama(args)
         return model
     elif args.model == "noam":
+        print("here")
         model = Noam(args)
     else:
         raise KeyError(f"Unknown model '{args.model}'.")
+    
+    return model

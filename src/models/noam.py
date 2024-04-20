@@ -22,7 +22,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from models.base import CausalSelfAttention, GPTBase
 
-from common import RMSNorm
+from .common import RMSNorm
 
 
 def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0) -> torch.Tensor:
@@ -168,6 +168,8 @@ class Noam(GPTBase):
             self.transformer.wte.weight = (
                 self.lm_head.weight
             )  # https://paperswithcode.com/method/weight-tying
+    
+    
 
         # init all weights
         self.apply(self._init_weights)

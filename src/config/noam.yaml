@@ -1,12 +1,12 @@
 model: "noam"
-weight_tying: False
+weight_tying: True
 
 compile: False
 grad_clip: 1.0
 save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
 wandb: True
-n_layer: 8
+n_layer: 10
 opt: "sofiag"
 weight_decay: 0.2
 lr: 1.e-3
