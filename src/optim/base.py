@@ -82,6 +82,10 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
     
     #while itr < iterations:
+        
+    measure_time_iteration_count = 100
+    last_measured_time = time.time()
+
     while True:
 
         elapsed_time = time.time() - start_time
@@ -89,6 +93,13 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         if elapsed_time > max_duration:
             print("Reached the 3-hour time limit. Stopping training.")
             break
+
+        if itr % measure_time_iteration_count == 0 and itr > 0:
+            curr_time = time.time()
+            iter_time = curr_time - last_measured_time
+            print(f" [time per itr] {iter_time*1000/measure_time_iteration_count:.2f}ms")
+            last_measured_time = time.time()
+
             
         for microstep_idx in range(acc_steps):  # gradient accumulation
             x, y = get_batch(data_train_iter, device=extra_args.device)

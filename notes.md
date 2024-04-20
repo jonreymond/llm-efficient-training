@@ -36,6 +36,7 @@ vanilla: 495 ms
 
 rope fixed + compiled: 440 ms (12.5 % speedup)
 
+rope fixed + compiled (n_layer=12): 495 ms 
 
 
 ### Compute-optimal
@@ -51,14 +52,35 @@ compiled => 76* 1.11 = 84M params
 
 ### Running
 
-base_smallish.yaml [running on sandbox] https://wandb.ai/entropyy/lauzhack-llm/runs/bw3mzelg?nw=nwuserentropyy
+noam_large.yaml [running on sandbox2] https://wandb.ai/entropyy/lauzhack-llm/runs/9uyztfyt/workspace?nw=nwuserentropyy
 
 
 
 
 ### Best config yet
 
-src/main.py --config src/config/sofiag_small.yaml
+https://wandb.ai/entropyy/lauzhack-llm/runs/ljxg01g5?nw=nwuserentropyy - noam.yaml - val pp: 22.96
+
+
+```
+model: "noam"
+weight_tying: True
+
+compile: True
+grad_clip: 1.0
+save_checkpoint_freq: 500
+wandb_project: "lauzhack-llm"
+wandb: True
+n_layer: 10
+opt: "adamw"
+weight_decay: 0.1
+lr: 1.e-3
+#rho: 0.05
+run_prefix: "noam_"
+
+```
+
+
 
 
 
