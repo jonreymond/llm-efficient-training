@@ -54,7 +54,7 @@ compiled => 76* 1.11 = 84M params
 
 noam_large.yaml [running on sandbox2] https://wandb.ai/entropyy/lauzhack-llm/runs/9uyztfyt/workspace?nw=nwuserentropyy
 
-
+noam_small [sandbox]
 
 
 ### Best config yet

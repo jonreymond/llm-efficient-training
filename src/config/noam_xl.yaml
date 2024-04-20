@@ -1,0 +1,14 @@
+model: "noam"
+weight_tying: True
+
+compile: True
+grad_clip: 1.0
+save_checkpoint_freq: 500
+wandb_project: "lauzhack-llm"
+wandb: False
+n_layer: 16
+opt: "adamw"
+weight_decay: 0.1
+lr: 1.e-3
+#rho: 0.05
+run_prefix: "xl"

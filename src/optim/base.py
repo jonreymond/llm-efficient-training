@@ -68,6 +68,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
 
     ## setting up time
+    print("Starting training")
     t0 = time.time()
     start_time = time.time()
     max_duration = 3 * 60 * 60 ## 3 hours
