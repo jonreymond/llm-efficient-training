@@ -130,7 +130,9 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             torch.nn.utils.clip_grad_norm_(model.parameters(), extra_args.grad_clip)
 
         opt.step()
-        scheduler.step()
+        if itr < iterations - 1: 
+            scheduler.step()
+            
         opt.zero_grad(set_to_none=True)
         itr += 1
 
@@ -202,10 +204,10 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                         "lr": current_lr,
                     }
 
-                    if itr == iterations:
-                        logs["val/final-ppl"] = val_perplexity
-                        logs["val/final-acc"] = val_acc
-                        logs["val/final-loss"] = val_loss
+                    # if itr == iterations:
+                    #     logs["val/final-ppl"] = val_perplexity
+                    #     logs["val/final-acc"] = val_acc
+                    #     logs["val/final-loss"] = val_loss
 
                     wandb.log(logs)
 
@@ -247,5 +249,67 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                         scheduler=scheduler,
                         itr=itr,
                         ckpt_path=ckpt_path)
+        
+
+
+    ## final eval
+    
+    print("final eval")
+    if distributed_backend.is_master_process():
+        t1 = time.time()
+        dt = t1 - t0
+        epoch = substep//num_substeps_per_epoch
+
+        model.eval()
+        train_loss = loss.detach().cpu().item() * acc_steps
+        current_lr = scheduler.get_last_lr()[0] if scheduler is not None else extra_args.lr
+        
+        eval_steps = len(data["val"])
+
+        val_acc, val_loss, val_perplexity = eval(
+            model,
+            data_val_iter,
+            extra_args.device,
+            max_num_batches=eval_steps,
+            ctx=type_ctx,
+        )
+
+        print_string = f"{epoch}/{itr} [train] loss={train_loss:.3f} [val] loss={val_loss:.3f}, pp={val_perplexity:.2f}, acc={val_acc:3f}"
+        print_string += f" [time per itr] {dt*1000/eval_freq:.2f}ms"
+        if scheduler is not None:
+            print_string += f" [lr] {current_lr:.5f}"
+        print(print_string)
+
+        if extra_args.wandb:
+            logs = {
+                "iter": itr,
+                "train/loss": train_loss,
+                "val/loss": val_loss,
+                "val/perplexity": val_perplexity,
+                "val/acc": val_acc,
+                "lr": current_lr,
+            }
+
+            logs["val/final-ppl"] = val_perplexity
+            logs["val/final-acc"] = val_acc
+            logs["val/final-loss"] = val_loss
+
+            wandb.log(logs)
+
+            if extra_args.eval_seq_prefix != 'none' and (itr % (eval_freq * 5) == 0 or itr == iterations):
+                if text_table is None:
+                    text_table = wandb.Table(columns=["itr", "val-pp", "text"])
+
+                out_str = distributed_backend.get_raw_model(model).generate_from_string(
+                    extra_args.eval_seq_prefix, max_new_tokens=40, temperature=0.9, top_k=None)
+                text_table.add_data(itr, val_perplexity, out_str)
+                # why a copy? see github.com/wandb/wandb/issues/2981
+                wandb.log({f"generated-text-{wandb.run.name}": copy.copy(text_table)})
+
+        model.train()
+        t0 = time.time()
+
+
+
 
     return stats

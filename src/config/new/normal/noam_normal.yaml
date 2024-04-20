@@ -5,11 +5,15 @@ compile: True
 grad_clip: 1.0
 save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
-wandb_group: "noam_normal"
+wandb_group: "new"
 wandb: True
 n_layer: 10
 opt: "adamw"
 weight_decay: 0.1
 lr: 1.e-3
 #rho: 0.05
-run_prefix: "noam_"
+run_prefix: "new_normall"
+
+iterations: 13000 ## train itr: 850 ms, 3 hours of training => num iterations = (1/0.85)*3*60*60 = 12705
+batch_size: 64
+acc_steps: 4
