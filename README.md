@@ -30,7 +30,7 @@ After launching many runs, I came to the same conclusion as [James Bekter](https
 #### Changes from default repo 
 - grad_clip = 1.0 (good practice, helps with stability)
 - Doubled the effective batch size (micro batch size at 64, gradient_accumulation=4), better learning dynamics and higher throughput (10% increase)
-- Original Llama implementation didn't torch.compile() because of the usage of complex numbers in RoPE (thanks to [lucidrains](https://github.com/lucidrains/rotary-embedding-torch/tree/main)), thus I reimplemented RoPE. Now it compiles! (no drawbacks, 15% increase in throughput). 
+- Original Llama implementation didn't torch.compile() because of the usage of complex numbers in RoPE, thus I reimplemented RoPE without them (thanks to [lucidrains](https://github.com/lucidrains/rotary-embedding-torch/tree/main)). Now it compiles! (no drawbacks, 15% increase in throughput). 
 - Reimplemented RMS norm, so that normalization is done in fp32 (important because bf16 precision is too low)
 
 
@@ -38,17 +38,17 @@ After launching many runs, I came to the same conclusion as [James Bekter](https
 
 Now that we've optimized the throughput, given we're compute-bound, we should think about [Chinchilla](https://arxiv.org/abs/2203.15556)!
 
-- The model size should be proportional to how many tokens we can crush through in 3 hours of training. The rule of thumb is 20:1 (20 tokens for 1 parameter) for a < 400M param model, however at our scale, the confidence interval is probably quite large.
+- The model size should be proportional to how many tokens we can crush through in 3 hours of training. Chinchilla concluded that the rule of thumb is 20:1 (20 tokens for 1 parameter) for a > 400M param model, however at our scale, the confidence interval for this ratio is probably quite large.
 
-- For our final model (177M parameters), we have a throughput of 100k tokens/s. With 3 hours of training, this gives us approximately 100'000 * 3 * 60 * 60 = 1.08B tokens. This gives us a ratio of about 6:1. This is off Chinchilla, however that's what we found to work the best. Current theory is that because the effective batch I used was smaller compared to Chinchilla's.
+- For our final model (177M parameters), we have a throughput of 100k tokens/s. With 3 hours of training, this gives us approximately 100'000 * 3 * 60 * 60 = 1.08B tokens. This gives us a ratio of about 6:1. This is not close to Chinchilla, however that's what we found to work the best. Current theory as to why there's a gap is because the effective batch I used was smaller compared to Chinchilla's.
 
 <br>
     
-- Two choices are possible to tweak the dimensions:
+- Two choices are possible to tweak the number of parameters:
     - Deeper: number of layers
-    - Wider: number of heads (must be changed with embedding dimension) such that emb_dim/n_head mod 64 = 0
+    - Wider: number of heads (must be changed with embedding dimension) such that emb_dim/n_head mod 64 = 0 (so that our A100 keeps going brr, using the tf32 tensor cores)
 
-- In the end, going wider was the most throughput efficient method to increase parameter count, and this translated into better results. 
+- In the end, going wider was the most throughput efficient method to increase parameter count, and this directly translated into better results. 
 - The final choice is: n_layers=10, n_heads=16, emb_dim = 1024
 
         
@@ -56,7 +56,9 @@ Now that we've optimized the throughput, given we're compute-bound, we should th
 
 # Final model weights
 
-The final model weights can be found 
+The final model weights can be found at https://drive.google.com/file/d/1zj0gXE1s0WU9ToTmKwOi0FCs2d3XVoxk/view?usp=drive_link.
+
+WARNING: my final run crashed 30 mins before the end. I'd be grateful if you could retrain from scratch and check the results there.
 
 
 # Training script and config
@@ -75,9 +77,9 @@ pip install -r requirements.txt
 
 ### Reproducing the experiment
 
-TO UPDATE
+TODO
 
 ```sh
-python src/main.py --config src/config/final/noam_wide.yaml 
+python src/main.py --config src/config/final/noam_wide3.yaml 
 ```
 

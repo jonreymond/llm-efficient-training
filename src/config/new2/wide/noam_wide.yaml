@@ -22,6 +22,5 @@ iterations: 10000 ## train itr: 1200 ms, 3 hours of training => num iterations =
 batch_size: 64
 acc_steps: 4
 
-eval_freq: 2000
-eval_seq_prefix: "none"
+
 
