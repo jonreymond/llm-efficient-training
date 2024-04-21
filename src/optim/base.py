@@ -26,11 +26,16 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
     ## getting the data
 
+    if extra_args.train_data_seed is not None:
+        train_data_seed = extra_args.train_data_seed
+    else:
+        train_data_seed = data_seed
+
     data["train"], train_sampler = get_dataloader(
         data["train"],
         sequence_length=sequence_length,
         batch_size=batch_size,
-        seed=data_seed,
+        seed=train_data_seed,
         distributed_backend=distributed_backend,
     )
     
@@ -162,7 +167,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             opt.update_hessian()
             # flush the gradients as soon as we can, no need for this memory anymore
             opt.zero_grad(set_to_none=True)
-
+            #model.zero_grad()
                 
 
 

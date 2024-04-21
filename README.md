@@ -36,6 +36,7 @@ parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--acc_steps', default=4, type=int)
 parser.add_argument('--seed', default=0, type=int) # random seed for the parameters
 parser.add_argument('--data_seed', default=1337, type=int) # random seed defining the data ordering
+parser.add_arugument("--train_data_seed", default=None, type=int) 
 parser.add_argument('--device', default='cuda:0', type=str) # see below to run on multiple GPUs
 parser.add_argument('--iterations', default=25000, type=int) # total number of training iterations
 parser.add_argument('--lr', default=1e-3, type=float) 

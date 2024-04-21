@@ -62,11 +62,16 @@ noam_small [sandbox]
 https://wandb.ai/entropyy/lauzhack-llm/runs/ljxg01g5?nw=nwuserentropyy - noam.yaml - final-acc: 0.4343  - final-loss: 3.134 -  final-pp: 22.96 
 
 
-(COntender)
+(New Contender)
 
 new_xl_noam_lr_0.001_bs64x4  - final-acc: 0.434 - final-loss: 3.125 - final-pp: 22.763
 https://wandb.ai/entropyy/lauzhack-llm/runs/t3oeb4wr?nw=nwuserentropyy
 
+
+(Newest Contender)
+
+new2_xl_noam_lr_0.001_bs64x4 - final-acc: 0.4344 - final-loss: 3.123 - final-pp: 22.725
+https://wandb.ai/entropyy/lauzhack-llm/runs/dynbcdcw?nw=nwuserentropyy
 
 
 

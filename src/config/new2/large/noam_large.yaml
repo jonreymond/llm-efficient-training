@@ -1,0 +1,19 @@
+model: "noam"
+weight_tying: True
+
+compile: True
+grad_clip: 1.0
+save_checkpoint_freq: 500
+wandb_project: "lauzhack-llm"
+wandb_group: "new2"
+wandb: True
+n_layer: 16
+opt: "adamw"
+weight_decay: 0.1
+lr: 1.e-3
+#rho: 0.05
+run_prefix: "new2_large"
+
+iterations: 10000 ## train itr: 1230 ms, 3 hours of training => num iterations = (1/1.23)*3*60*60 = 8780
+batch_size: 64
+acc_steps: 4
