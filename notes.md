@@ -59,7 +59,13 @@ noam_small [sandbox]
 
 ### Best config yet
 
-https://wandb.ai/entropyy/lauzhack-llm/runs/ljxg01g5?nw=nwuserentropyy - noam.yaml - val pp: 22.96
+https://wandb.ai/entropyy/lauzhack-llm/runs/ljxg01g5?nw=nwuserentropyy - noam.yaml - final-acc: 0.4343  - final-loss: 3.134 -  final-pp: 22.96 
+
+
+(COntender)
+
+new_xl_noam_lr_0.001_bs64x4  - final-acc: 0.434 - final-loss: 3.125 - final-pp: 22.763
+https://wandb.ai/entropyy/lauzhack-llm/runs/t3oeb4wr?nw=nwuserentropyy
 
 
 
