@@ -56,9 +56,13 @@ Now that we've optimized the throughput, given we're compute-bound, we should th
 
 # Final model weights
 
-The final model weights can be found at https://drive.google.com/file/d/1zj0gXE1s0WU9ToTmKwOi0FCs2d3XVoxk/view?usp=drive_link.
+**WARNING: my final "optimal" run crashed 30 mins before the submission. I'd be grateful if you could retrain from scratch and check the results then.**
 
-WARNING: my final run crashed 30 mins before the end. I'd be grateful if you could retrain from scratch and check the results there.
+However, for the sake of having weights, please find them here: https://drive.google.com/file/d/1zj0gXE1s0WU9ToTmKwOi0FCs2d3XVoxk/view?usp=drive_link.
+
+
+I'll update this doc and put the true final model weights in here (when it's done training strictly for 3 hours), but that will be after the submission deadline, so feel free to ignore the link if you think that this could be cheating.
+
 
 
 # Training script and config
@@ -77,7 +81,6 @@ pip install -r requirements.txt
 
 ### Reproducing the experiment
 
-TODO
 
 ```sh
 python src/main.py --config src/config/final/noam_wide3.yaml 
