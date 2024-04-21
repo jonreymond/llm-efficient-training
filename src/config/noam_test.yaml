@@ -11,11 +11,13 @@ n_embd: 1024
 n_head: 16
 opt: "adamw"
 weight_decay: 0.1
-lr: 1.e-3
+lr: 0.0015
 #rho: 0.05
 run_prefix: "test"
 
+
+iterations: 10000 ## train itr: 1200 ms, 3 hours of training => num iterations = (1/1.23)*3*60*60 = 8780
+
 batch_size: 64
 acc_steps: 4
-
 eval_freq: 50

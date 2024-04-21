@@ -68,11 +68,16 @@ new_xl_noam_lr_0.001_bs64x4  - final-acc: 0.434 - final-loss: 3.125 - final-pp: 
 https://wandb.ai/entropyy/lauzhack-llm/runs/t3oeb4wr?nw=nwuserentropyy
 
 
-(Newest Contender)
+(New Contender)
 
 new2_xl_noam_lr_0.001_bs64x4 - final-acc: 0.4344 - final-loss: 3.123 - final-pp: 22.725
 https://wandb.ai/entropyy/lauzhack-llm/runs/dynbcdcw?nw=nwuserentropyy
 
+
+(Newest Contender)
+
+(230M parameters) new2_wide_noam_lr_0.001_bs64x4 - final-acc: 0.4347 - final-loss: 3.112 - final-pp: 22.473
+https://wandb.ai/entropyy/lauzhack-llm/runs/pijawqpn?nw=nwuserentropyy
 
 
 ```

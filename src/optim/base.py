@@ -26,16 +26,12 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
     ## getting the data
 
-    if extra_args.train_data_seed is not None:
-        train_data_seed = extra_args.train_data_seed
-    else:
-        train_data_seed = data_seed
 
     data["train"], train_sampler = get_dataloader(
         data["train"],
         sequence_length=sequence_length,
         batch_size=batch_size,
-        seed=train_data_seed,
+        seed=data_seed,
         distributed_backend=distributed_backend,
     )
     

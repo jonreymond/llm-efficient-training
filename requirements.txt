@@ -8,3 +8,9 @@ transformers
 wandb
 datasets
 zstandard
+
+## new ones
+
+ipykernel
+einops
+beartype

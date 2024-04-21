@@ -1,6 +1,5 @@
 model: "noam"
 weight_tying: True
-train_data_seed: 1
 
 compile: True
 grad_clip: 1.0
