@@ -63,6 +63,8 @@ However, for the sake of having weights, please find them here: https://drive.go
 
 I'll update this doc and put the true final model weights in here (when it's done training strictly for 3 hours), but that will be after the submission deadline, so feel free to ignore the link if you think that this could be cheating.
 
+UPDATE: here are the final model weights, https://drive.google.com/file/d/1h0Sa7q_L8LduwZ9cSsMvLrP8xWHJJ8NL/view?usp=sharing. Expected performance should be [val] loss=3.104, pp=22.29, acc=0.435708.
+
 
 
 # Training script and config
