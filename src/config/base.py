@@ -43,7 +43,7 @@ def parse_args(base_parser, args, namespace):
     # Model params
     parser.add_argument('--model', default='base', choices=['base', 'llama2', 'noam'])
     parser.add_argument("--weight_tying", action="store_true", default=False)
-    parser.add_argument('--use_pretrained', default="auto", type=none_or_str) # 'none', 'gpt-2' or a path to the pretraind model
+    parser.add_argument('--use_pretrained', default="ckpt.pt", type=none_or_str) # 'none', 'gpt-2' or a path to the pretraind model
     parser.add_argument('--dropout', default=0.0, type=float)
     parser.add_argument('--n_head', default=12, type=int)
     parser.add_argument('--n_layer', default=12, type=int) # depths in att + ff blocks
