@@ -1,8 +1,10 @@
 # LLM-baselines
 
-Repository for my participation in the [LLM training and architecture exploration hackathon](https://lu.ma/lauzhack-llms-apis) organized by [LauzHack](https://lauzhack.com/) and the [MLO lab](https://www.epfl.ch/labs/mlo/).
+Repository for 1st place win in the [LLM training and architecture exploration hackathon](https://lauzhack-llms-genai-2024.devpost.com/) organized by [LauzHack](https://lauzhack.com/) and the [MLO lab](https://www.epfl.ch/labs/mlo/). 
 
-The ideas is to train the best performing language model on [Slimpajama](https://huggingface.co/datasets/DKYoon/SlimPajama-6B) with 3 hours of compute on a A100. You have to start with a fairly simple codebase: [llm-baselines](https://github.com/epfml/llm-baselines).
+I won 1.5k and a trip to Huawei HQ in China!
+
+The ideas is to train the best performing language model on [Slimpajama](https://huggingface.co/datasets/DKYoon/SlimPajama-6B) with 3 hours of compute on a A100. You have to start with a fairly simple codebase: [llm-baselines](https://github.com/epfml/llm-baselines). 
 
 # Idea and approach
 
