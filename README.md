@@ -90,3 +90,16 @@ pip install -r requirements.txt
 python src/main.py --config src/config/final/noam_wide3.yaml 
 ```
 
+# New updates
+```
+# install conda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+
+# create conda env with python 3.10 -- necessary for torch.compile
+conda create -n torch310 python=3.10 -y
+conda activate torch310
+
+# install the dependencies
+pip install -r requirements.txt
+```

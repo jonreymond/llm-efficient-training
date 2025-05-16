@@ -17,13 +17,18 @@ weight_decay: 0.1
 
 lr: 0.00125
 #rho: 0.05
-run_prefix: "final_wide3"
+run_prefix: "pre-2400"
 
 
-iterations: 10000 ## train itr: 1200 ms, 3 hours of training => num iterations = (1/1.23)*3*60*60 = 8780
+# train itr: ~1540 ms, 1 hour of training => num iterations = (1/1.54)*1*60*60 = ~2400
+# 1h: 2400, 2h: 4800, 3h: 7200
+
+# train itr: 1200 ms, 1 hour of training => num iterations = (1/1.2)*1*60*60 = 3000
+# 1h: 3000, 2h: 6000, 3h: 9000
+
+iterations: 3000
 batch_size: 64
 acc_steps: 4
 
-eval_freq: 2000
+eval_freq: 500
 eval_seq_prefix: "none"
-
