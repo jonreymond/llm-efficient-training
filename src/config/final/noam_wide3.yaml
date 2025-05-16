@@ -13,6 +13,7 @@ n_head: 16
 opt: "adamw"
 weight_decay: 0.1
 
+# dataset: "mathqa" # [slimpajama, mathqa]
 
 lr: 0.00125
 #rho: 0.05
