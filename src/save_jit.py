@@ -36,7 +36,7 @@ def main(args):
     distributed_backend = distributed.make_backend_from_args(args)
     args = distributed_backend.get_adjusted_args_for_process(args)
 
-    args.device = torch.device(args.device)
+    args.device = 'cpu'
     device_type = "cuda" if "cuda" in str(args.device) else "cpu"
     if device_type == "cuda":
         torch.cuda.set_device(args.device)
@@ -61,53 +61,10 @@ def main(args):
     group_specs = distributed_backend.get_raw_model(model).get_parameter_group_specs()
     param_name_mapping = {p_name: p for p_name, p in model.named_parameters()}
     optimized_params_cnt = 0
-    for g in group_specs:
-        params = []
-        for p_name in g["params"]:
-            translated_p_names = distributed_backend.translate_model_parameter_name_for_node(p_name)
-            params += [param_name_mapping[p_name] for p_name in translated_p_names]
-        g["params"] = params
-        optimized_params_cnt += sum([p.numel() for p in g["params"]])
-    print("number of optimized parameters: %.2fM" % (optimized_params_cnt/1e6,))
-    if args.opt == 'adamw':
-        use_fused = (device_type == 'cuda') and ('fused' in inspect.signature(torch.optim.AdamW).parameters)
-        print(f"using fused AdamW: {use_fused}")
-        extra_args = dict(fused=True) if use_fused else dict()
-        opt = torch.optim.AdamW(group_specs, lr=args.lr, betas=(args.beta1, args.beta2),
-                                weight_decay=args.weight_decay, **extra_args)
-    elif args.opt == "sgd":
-        opt = torch.optim.SGD(group_specs, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
-    elif args.opt == "sofiag":
-        opt = SophiaG(group_specs, lr=args.lr, betas=(args.beta1, args.beta2),
-                                weight_decay=args.weight_decay, rho=args.rho)
-
-    else:
-        raise NotImplementedError(f"{args.opt} optimizer doesn't exist")
-
-    if args.scheduler != 'none':
-        if args.scheduler in ['cos', 'linear']:
-            scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=opt, max_lr=args.lr, total_steps=args.iterations,
-                                                            pct_start=args.warmup_percent, anneal_strategy=args.scheduler,
-                                                            cycle_momentum=False, div_factor=1e2, final_div_factor=.1)
-        elif args.scheduler == 'cycle':
-            scheduler = OneCycleLR(
-                optimizer=opt,
-                max_lr=1e-3,                    # peak learning rate
-                total_steps=10000,             # total number of training steps
-                pct_start=0.3,                 # % of total steps to warm up
-                anneal_strategy='cos',         # or 'linear'
-                div_factor=25,                 # initial_lr = max_lr / div_factor
-                final_div_factor=1e4,          # final_lr = max_lr / final_div_factor
-                three_phase=False,             # typical 2-phase cycle
-                verbose=False
-            )
-        else:
-            raise NotImplementedError(f"Unknown scheduler type: {args.scheduler}.")
-    else:
-        scheduler = None
 
     args.world_size = distributed_backend.get_world_size()
     exp_name = args.exp_name
+
     if distributed_backend.is_master_process() and args.wandb:
         params_copy = copy.deepcopy(vars(args))
         del params_copy['device']
@@ -240,34 +197,11 @@ def main(args):
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
 
-    # Training
-    print(f"\nTraining model={args.model} \n{vars(args)}\n")
-    stats = train(
-        model=model,
-        opt=opt,
-        data=data,
-        data_seed=args.data_seed,
-        scheduler=scheduler,
-        iterations=args.iterations,
-        acc_steps=args.acc_steps,
-        batch_size=args.batch_size,
-        sequence_length=args.sequence_length,
-        eval_freq=args.eval_freq,
-        ckpt_path=f"{ckpt_path}/ckpt.pt",
-        distributed_backend=distributed_backend,
-        extra_args=args,
-        itr=itr,
-        rng_state_dict=rng_state_dict,
-        max_duration=args.max_duration
-    )
+    model = model.to('cpu')
+    scripted_model = torch.jit.script(model)
+    scripted_model.save("jit_omodel.pt")
 
-    args.device = None
-    args.dtype = None
-    stats['args'] = vars(args)
-    if distributed_backend.is_master_process():
-        with open(f"{ckpt_path}/summary.json", "w") as fs:
-            json.dump(stats, fs)
-    distributed_backend.finalize()
+
 
 
 if __name__ == "__main__":

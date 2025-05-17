@@ -4,7 +4,7 @@ from data.utils import get_dataloader
 import torch
 import torch.nn.functional as F
 import wandb
-import time 
+import time
 import itertools
 import copy
 import random
@@ -21,7 +21,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
     device_type = 'cuda' if 'cuda' in str(extra_args.device) else 'cpu'
     type_ctx = nullcontext() if device_type == 'cpu' else torch.amp.autocast(
         device_type=device_type, dtype=torch.bfloat16)  # extra_args.dtype)
-    best_val_loss, text_table = float('inf'), None # best_val_loss not used atm, early stopping not recommended but possible 
+    best_val_loss, text_table = float('inf'), None # best_val_loss not used atm, early stopping not recommended but possible
     substep = itr * acc_steps
 
     ## getting the data
@@ -34,7 +34,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         seed=data_seed,
         distributed_backend=distributed_backend,
     )
-    
+
     data["val"], val_sampler = get_dataloader(
         data["val"],
         sequence_length=sequence_length,
@@ -44,7 +44,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
     num_substeps_per_epoch = len(data["train"])
     train_epochs = substep//num_substeps_per_epoch
-    
+
     if rng_state_dict is not None and  rng_state_dict.get("train_sampler_state", None) is not None:
         train_sampler.generator.set_state(rng_state_dict["train_sampler_state"])
     if hasattr(train_sampler, "set_epoch"):
@@ -53,14 +53,14 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         sampler_state_before_iter = train_sampler.generator.get_state()
     data_train_iter = iter(data["train"])
 
-    
+
     # for val data we don't care about epochs? just cycle through (no need to set_epoch to reshuffle)
     data_val_iter = itertools.cycle(data["val"])
 
     stats = {"train_loss": [], "val_loss": [], "val_pp": [], "val_acc": []}
 
-   
-    
+
+
     if extra_args.compile:
         print(f"Compiling model ...")
         model = torch.compile(model) # requires pytorch 2.0+
@@ -72,7 +72,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
     print("Starting training")
     t0 = time.time()
     start_time = time.time()
-    
+
     if rng_state_dict is not  None:
         torch.set_rng_state(rng_state_dict["cpu_rng_state"])
         torch.cuda.set_rng_state(rng_state_dict["gpu_rng_state"])
@@ -81,9 +81,9 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
     for _ in range(substep % num_substeps_per_epoch):
         get_batch(data_train_iter, device=extra_args.device)
 
-    
+
     #while itr < iterations:
-        
+
     measure_time_iteration_count = 100
     last_measured_time = time.time()
 
@@ -101,10 +101,10 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             print(f" [time per itr] {iter_time*1000/measure_time_iteration_count:.2f}ms")
             last_measured_time = time.time()
 
-            
+
         for microstep_idx in range(acc_steps):  # gradient accumulation
             x, y = get_batch(data_train_iter, device=extra_args.device)
-            
+
             with type_ctx:
                 with distributed_backend.get_context_for_microstep_forward(model=model, microstep_idx=microstep_idx, gradient_accumulation_steps=acc_steps):
                     outputs = model(x, targets=y)
@@ -112,6 +112,9 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             loss = outputs['loss'] / acc_steps
             loss.backward()
             substep += 1
+
+            if extra_args.wandb and microstep_idx == acc_steps - 1:
+                wandb.log({"train/loss_step": loss.item() * acc_steps}, step=substep)
 
             ## checking if we have done a full epoch
             if substep % len(data["train"]) == 0:
@@ -130,9 +133,9 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             torch.nn.utils.clip_grad_norm_(model.parameters(), extra_args.grad_clip)
 
         opt.step()
-        if itr < iterations - 1: 
+        if itr < iterations - 1:
             scheduler.step()
-            
+
         opt.zero_grad(set_to_none=True)
         itr += 1
 
@@ -141,7 +144,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         if extra_args.opt == "sofiag" and (itr % extra_args.hessian_interval == 0):
             for microstep_idx in range(acc_steps):  # gradient accumulation
                 x, y = get_batch(data_train_iter, device=extra_args.device)
-                
+
                 with type_ctx:
                     with distributed_backend.get_context_for_microstep_forward(model=model, microstep_idx=microstep_idx, gradient_accumulation_steps=acc_steps):
                         outputs = model(x, targets=y, get_logits=True)
@@ -163,7 +166,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
             # flush the gradients as soon as we can, no need for this memory anymore
             opt.zero_grad(set_to_none=True)
             #model.zero_grad()
-                
+
 
 
 
@@ -176,7 +179,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                 model.eval()
                 train_loss = loss.detach().cpu().item() * acc_steps
                 current_lr = scheduler.get_last_lr()[0] if scheduler is not None else extra_args.lr
-                
+
                 eval_steps = (
                     24 if itr < iterations else len(data["val"])
                 )
@@ -223,7 +226,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
 
                 model.train()
                 t0 = time.time()
-        
+
         ## saving checkpoints
         if distributed_backend.is_master_process():
             if extra_args.save_checkpoint_freq is not None and itr % extra_args.save_checkpoint_freq == 0:
@@ -239,7 +242,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                                 py_rng_state=random.getstate(),
                                 train_sampler_state=sampler_state_before_iter,
                                 ckpt_path=os.path.join(os.path.dirname(ckpt_path), f"ckpt_{itr}.pt"))
-                
+
     ## saving checkpoints
     if distributed_backend.is_master_process():
         print(f"saving checkpoint to {ckpt_path}")
@@ -249,11 +252,11 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                         scheduler=scheduler,
                         itr=itr,
                         ckpt_path=ckpt_path)
-        
+
 
 
     ## final eval
-    
+
     print("final eval")
     if distributed_backend.is_master_process():
         t1 = time.time()
@@ -263,7 +266,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
         model.eval()
         train_loss = loss.detach().cpu().item() * acc_steps
         current_lr = scheduler.get_last_lr()[0] if scheduler is not None else extra_args.lr
-        
+
         eval_steps = len(data["val"])
 
         val_acc, val_loss, val_perplexity = eval(
