@@ -113,3 +113,5 @@ widgetsnbextension==4.0.14
 xxhash==3.5.0
 yarl==1.20.0
 zstandard==0.23.0
+torchao
+lion-pytorch

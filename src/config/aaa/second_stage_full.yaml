@@ -34,3 +34,5 @@ max_duration: 3600 # {1h: 3600, 2h: 7200, 3h: 10800, 4h: 14400}
 peft_type: "none"
 
 dataset: "mathqa" # [slimpajama, mathqa]
+
+qat: False

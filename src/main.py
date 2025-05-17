@@ -14,6 +14,11 @@ from models.utils import get_model
 from data.utils import get_dataset
 from optim.base import train_base
 from optim.sofia import SophiaG
+
+from lion_pytorch import Lion
+from torchao.quantization.prototype.qat import Int8DynActInt4WeightQATQuantizer
+
+
 import distributed
 from torch.optim.lr_scheduler import OneCycleLR
 
@@ -80,6 +85,8 @@ def main(args):
     elif args.opt == "sofiag":
         opt = SophiaG(group_specs, lr=args.lr, betas=(args.beta1, args.beta2),
                                 weight_decay=args.weight_decay, rho=args.rho)
+    # elif args.opt == "lion":
+    #     opt = Lion(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     else:
         raise NotImplementedError(f"{args.opt} optimizer doesn't exist")
@@ -240,6 +247,12 @@ def main(args):
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
 
+
+    if args.qat:
+        print("prepare model for QAT")
+        qat_quantizer = Int8DynActInt4WeightQATQuantizer()
+        model = qat_quantizer.prepare(model)
+        
     # Training
     print(f"\nTraining model={args.model} \n{vars(args)}\n")
     stats = train(
@@ -260,6 +273,9 @@ def main(args):
         rng_state_dict=rng_state_dict,
         max_duration=args.max_duration
     )
+    
+    if args.qat:
+        model = qat_quantizer.convert(model)
 
     args.device = None
     args.dtype = None
