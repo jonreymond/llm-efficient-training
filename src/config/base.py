@@ -72,6 +72,7 @@ def parse_args(base_parser, args, namespace):
                         choices=distributed.registered_backends())  # distributed backend type
     parser.add_argument('--save_checkpoint_freq', default=None, type=int, required=False)
     parser.add_argument('--max_duration', default=3*60*60, type=int, required=False)
+    # LoRA
 
 
 

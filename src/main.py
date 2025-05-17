@@ -121,7 +121,8 @@ def main(args):
     if args.use_pretrained is not None:
         last_ckpt_path = args.use_pretrained
         print(f"Resuming from {last_ckpt_path}")
-        checkpoint = torch.load(os.path.join(ckpt_path, last_ckpt_path))
+        # checkpoint = torch.load(os.path.join(ckpt_path, last_ckpt_path))
+        checkpoint = torch.load(last_ckpt_path)
         model_state_dict = {distributed_backend.translate_model_parameter_name_for_node(k.replace("_orig_mod.", ""))[0]:v for k,v in checkpoint['model'].items()}
         # FIXME checkpoints from compiled model have _orig_mod keyword
 
@@ -148,47 +149,77 @@ def main(args):
     else:
         raise NotImplementedError(f"No training method implemented for model type '{args.model}'.")
 
-    print(f"\nTraining model={args.model} \n{vars(args)}\n")
-
-    print(model)
-
-    print([(name, type(module)) for name, module in model.named_modules()])
-
+    # Apply LoRA
+    """
+    Noam(
+      (transformer): ModuleDict(
+        (wte): Embedding(50304, 1024)
+        (drop): Dropout(p=0.0, inplace=False)
+        (h): ModuleList(
+          (0-9): 10 x LlamaBlock(
+            (ln_1): RMSNorm()
+            (attn): LlamaAttention(
+              (c_attn): Linear(in_features=1024, out_features=3072, bias=False)
+              (c_proj): Linear(in_features=1024, out_features=1024, bias=False)
+              (attn_dropout): Dropout(p=0.0, inplace=False)
+              (resid_dropout): Dropout(p=0.0, inplace=False)
+              (rotary_emb): RotaryEmbedding()
+            )
+            (ln_2): RMSNorm()
+            (mlp): LlamaMLP(
+              (w1): Linear(in_features=1024, out_features=2816, bias=False)
+              (w2): Linear(in_features=1024, out_features=2816, bias=False)
+              (c_proj): Linear(in_features=2816, out_features=1024, bias=False)
+            )
+          )
+        )
+        (ln_f): RMSNorm()
+      )
+      (lm_head): Linear(in_features=1024, out_features=50304, bias=False)
+      (rotary_emb): RotaryEmbedding()
+    )
+    """
     lora_config = LoraConfig(
         r=8,
         lora_alpha=16,
         target_modules=["c_attn", "c_proj", "w1", "w2"],
         lora_dropout=0.05
     )
+    model.config.tie_word_embeddings = model.config.weight_tying # LoRA expects `tie_word_embeddings`
+    if not hasattr(model.config, "get"):
+        model.config.get = lambda key, default=None: getattr(model.config, key, default)
+    
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
-    # stats = train(
-    #     model=model,
-    #     opt=opt,
-    #     data=data,
-    #     data_seed=args.data_seed, 
-    #     scheduler=scheduler, 
-    #     iterations=args.iterations,
-    #     acc_steps=args.acc_steps,
-    #     batch_size=args.batch_size, 
-    #     sequence_length=args.sequence_length,
-    #     eval_freq=args.eval_freq, 
-    #     ckpt_path=f"{ckpt_path}/ckpt.pt", 
-    #     distributed_backend=distributed_backend, 
-    #     extra_args=args, 
-    #     itr=itr, 
-    #     rng_state_dict=rng_state_dict,
-    #     max_duration=args.max_duration
-    # )
+    # Training
+    print(f"\nTraining model={args.model} \n{vars(args)}\n")
+    stats = train(
+        model=model,
+        opt=opt,
+        data=data,
+        data_seed=args.data_seed, 
+        scheduler=scheduler, 
+        iterations=args.iterations,
+        acc_steps=args.acc_steps,
+        batch_size=args.batch_size, 
+        sequence_length=args.sequence_length,
+        eval_freq=args.eval_freq, 
+        ckpt_path=f"{ckpt_path}/ckpt.pt", 
+        distributed_backend=distributed_backend, 
+        extra_args=args, 
+        itr=itr, 
+        rng_state_dict=rng_state_dict,
+        max_duration=args.max_duration
+    )
             
-    # args.device = None
-    # args.dtype = None
-    # stats['args'] = vars(args)
-    # if distributed_backend.is_master_process():
-    #     with open(f"{ckpt_path}/summary.json", "w") as fs:
-    #         json.dump(stats, fs)
-    # distributed_backend.finalize()
+    args.device = None
+    args.dtype = None
+    stats['args'] = vars(args)
+    if distributed_backend.is_master_process():
+        with open(f"{ckpt_path}/summary.json", "w") as fs:
+            json.dump(stats, fs)
+    distributed_backend.finalize()
 
 
 if __name__ == "__main__":

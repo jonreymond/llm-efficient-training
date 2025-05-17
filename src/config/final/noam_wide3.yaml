@@ -1,7 +1,7 @@
 model: "noam"
 weight_tying: True
 
-compile: False
+compile: True
 grad_clip: 1.0
 save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
@@ -13,13 +13,13 @@ n_head: 16
 opt: "adamw"
 weight_decay: 0.1
 
-# dataset: "mathqa" # [slimpajama, mathqa]
+dataset: "mathqa" # [slimpajama, mathqa]
 
 lr: 0.00125
 #rho: 0.05
-run_prefix: "pre-2400"
+run_prefix: "fine-2400"
 
-use_pretrained: "auto"
+use_pretrained: "auto" #"/home/jovyan/work/llm-efficient-training/exps/slimpajama/noam/pre-2400_noam_lr0.00125_bs64x4_seqlen512/iterations=2400_eval_freq=500_grad_clip=1.0_weight_tying=True_n_head=16_n_layer=10_n_embd=1024_save_checkpoint_freq=500_seed=0/ckpt_2500.pt" # "auto"
 max_duration: 10800 # {1h: 3600, 2h: 7200, 3h: 10800, 4h: 14400}
 
 # train itr: ~1540 ms, 1 hour of training => num iterations = (1/1.54)*1*60*60 = ~2400
