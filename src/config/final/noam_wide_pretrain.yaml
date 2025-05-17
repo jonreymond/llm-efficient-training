@@ -1,0 +1,38 @@
+model: "noam"
+weight_tying: True
+
+compile: False
+grad_clip: 1.0
+save_checkpoint_freq: 500
+wandb_project: "lauzhack-llm"
+wandb_group: "final"
+wandb: True
+n_layer: 10
+n_embd: 1024
+n_head: 16
+opt: "adamw"
+weight_decay: 0.1
+
+dataset: "slimpajama" # [slimpajama, mathqa]
+
+lr: 0.00125
+run_prefix: "pt-7500"
+
+use_pretrained: "auto" # "auto"
+max_duration: 10800 # {1h: 3600, 2h: 7200, 3h: 10800, 4h: 14400}
+
+# pt-train itr: ~1540 ms, 1 hour of training => num iterations = (1/1.54)*1*60*60 = ~2400
+# 1h: 2400, 2h: 4800, 3h: 7200
+
+iterations: 7500 # needed for scheduler
+batch_size: 64
+acc_steps: 4
+
+eval_freq: 500
+eval_seq_prefix: "none"
+
+peft_type: "none"
+lora_r: 4
+lora_alpha: 8
+lora_dropout: 0.05
+init_lora_weights: "pissa"
