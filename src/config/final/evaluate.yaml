@@ -7,6 +7,6 @@ n_head: 16
 
 dataset: "mathqa" # [slimpajama, mathqa]
 
-use_pretrained: "/home/saydalie/work/llm-training/exps/mathqa/noam/ft-7500-lora_noam_lr0.00125_bs64x4_seqlen512/iterations=7500_eval_freq=500_grad_clip=1.0_dataset=mathqa_weight_tying=True_use_pretrained=/home/saydalie/work/llm-training/exps/slimpajama/noam/pt-2500_noam_lr0.00125_bs64x4_seqlen512/iterations=2500_eval_freq=500_grad_clip=1.0_weight_tying=True_use_pretrained=auto_n_head=16_n_layer=10_n_embd=1024_save_checkpoint_freq=500_max_duration=3600/lora_r=8_lora_alpha=16_seed=0/ckpt.pt_n_head=16_n_layer=10_n_embd=1024_save_checkpoint_freq=500/lora_alpha=16_init_lora_weights=pissa_seed=0/ckpt.pt"
+use_pretrained: "./exps/mathqa/noam/mathqa_full_noam_lr5e-06_bs64x4_seqlen512/iterations=4000_eval_freq=500_grad_clip=1.0_dataset=mathqa_weight_tying=True_use_pretrained=./exps/slimpajama/noam/better_scheduler_noam_lr0.0008_bs64x4_seqlen512/iterations=10000_scheduler=cycle_eval_freq=2000_grad_clip=1.0_weight_tying=True_n_head=16_n_layer=10_n_embd=1024_compile=True_save_checkpoint_freq=500_seed=0/ckpt.pt_n_head=16_n_layer=10_n_embd=1024_compile=True/save_checkpoint_freq=500_max_duration=3600_seed=0/ckpt.pt"
 
-results_path: "/home/saydalie/work/llm-training/results"
+results_path: "./our_best"

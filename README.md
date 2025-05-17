@@ -2,124 +2,89 @@
 Our work is heavily based on the last year's work of [Harold Benoit](https://www.haroldbenoit.com/).
 You can see his work [here](https://github.com/HaroldBenoit/llm-efficient-training). He was able to substantially outperform the baseline.
 
-## What we tried, but did not work
+Harold came up with many improvements over the provided baseline, such as better activation function, RoPE implementation compatible with torch compile, optimal model size, etc.
 
 ## What we tried, and worked
 ### Cycle scheduler
-We used a cycle scheduler with a cosine annealing schedule. This means that learning rate starts, small, is quickly 
+We used a cycle scheduler with a cosine annealing schedule. This means that learning rate starts small, is quickly increased a lot, and then decreased. This strategy is not used by the frontier models, because it is hard to get right with multi-gpu training, but we found in our case it beats other scheduling methods.
 
 ![alt text](image-1.png)
-## Bug Fix
+
+### Full fine tuning
+Best way to fine tune on the `mathqa	` dataset was to optimize all the parameters.
 
 
+### Pretraining vs. fine tuning time allocation
+We pretrain the model on `slimpajama` for 3 hours and then fine tune on `mathqa` for another 1 hour. This is likely not the optimal split, if we had more time we would try pre-training for longer. 
 
+### Bug Fix
+The cross entropy loss is calculated incorrectly in the baseline, the ignore index that is set (-1) does not correspond to the token that is used for padding. This lead to mode only focusing on pad tokens during fine tuning and achieving incredibly low loss (there are a lot of padding tokens).
 
+### Decoding Method
+We implemented 5-shot evaluation on the held-out 
 
+## What we tried, but did not work
+### PEFT and LoRA
+For fine-tuning on `mathqa`, we implemented LoRA and its variants – Loha, Lokr, but we found Loha and Lokr decreased the training process by x%. LoRA had a similar training speed as full-finetuning, but performed much worse on the validation loss. We followed the hyperparameters form [alignment-handbook](https://github.com/huggingface/alignment-handbook)
 
+### Alternative optimizer
+We included in the program the Lion(evoLved sIgn mOmeNtum) optimizer [link](https://arxiv.org/abs/2302.06675). It claims to be more memory efficient than Adam, but we were unable to test it extensively.
 
+### Deploying on phone
+The idea we wanted to implement was to be able to quantize the model and convert it after training, so that it could be run on a mobile device. We included the Quantization Aware Training (QAT) method that takes into account the “quantization loss” during training with the idea to perform post static quantization when the model is fully trained.
 
+However, running the model without proper optimization (on the phone’s GPU) would lead to very large latency. The latter would require changing some layers of the PyTorch model, so that it is compatible with TorchScript. Unfortunately, this turned out to be beyond our time budget.
 
+## How to run
+We were in a rush to submit before the deadline. If you encounter any issues, please email [Mikulas Vanousek](https://people.epfl.ch/mikulas.vanousek/?lang=en) at his EPFL email address: 
+We used 1 A100 GPU with 40GB to run the training. It consists of 2 parts: 
+The first part takes 3 hours
+The second part takes 1 hour
+Before you can run the training for the first time, the dataset needs to be tokenized. We did not take this into account when measuring the time. Also, we run an evaluation of the model after it is trained. We also don’t consider this evaluation time in the 4 hours, you can turn off the evaluation in the config and run it manually after the training is done. 
 
-
-
-
-## Better optimizer (failed)
-
-- I tried the (infamous) second-order optimizer [Sophia](https://arxiv.org/abs/2305.14342)
-    - It didn't make a meaningiful difference during training, even at multiple model scales and architectures. Conclusion: it was slower (both in terms of throughput and final performance) than just using fused AdamW.
-
-
-## Bitter lesson, GPUs go brrrr (successful)
-
-After launching many runs, I came to the same conclusion as [James Bekter](https://nonint.com/2023/06/10/the-it-in-ai-models-is-the-dataset/). All the training runs were very similar. Thus, in our compute-bound regime, the best thing to do is to have the most efficient model (with enough capacity) and just train on the maximum of tokens possible in 3 hours.
-
-
-#### Architecure
-- After some testing, I decided to go with llama architecure instead of classic gpt-2 architecture
-    - why?
-        - [RoPE](https://arxiv.org/abs/2104.09864) instead of learned embeddings, less parameters to learn, and works well in practice.
-        - SwiGLU (Noam Shazeer showed  it was better, let's say I trust the dude)
-        - RMSNrom instead of LayerNorm, because speed
-
-        
-#### Changes from default repo 
-- grad_clip = 1.0 (good practice, helps with stability)
-- Doubled the effective batch size (micro batch size at 64, gradient_accumulation=4), better learning dynamics and higher throughput (10% increase)
-- Original Llama implementation didn't torch.compile() because of the usage of complex numbers in RoPE, thus I reimplemented RoPE without them (thanks to [lucidrains](https://github.com/lucidrains/rotary-embedding-torch/tree/main)). Now it compiles! (no drawbacks, 15% increase in throughput). 
-- Reimplemented RMS norm, so that normalization is done in fp32 (important because bf16 precision is too low)
-
-
-#### How to choose model size
-
-Now that we've optimized the throughput, given we're compute-bound, we should think about [Chinchilla](https://arxiv.org/abs/2203.15556)!
-
-- The model size should be proportional to how many tokens we can crush through in 3 hours of training. Chinchilla concluded that the rule of thumb is 20:1 (20 tokens for 1 parameter) for a > 400M param model, however at our scale, the confidence interval for this ratio is probably quite large.
-
-- For our final model (177M parameters), we have a throughput of 100k tokens/s. With 3 hours of training, this gives us approximately 100'000 * 3 * 60 * 60 = 1.08B tokens. This gives us a ratio of about 6:1. This is not close to Chinchilla, however that's what we found to work the best. Current theory as to why there's a gap is because the effective batch I used was smaller compared to Chinchilla's.
-
-<br>
-    
-- Two choices are possible to tweak the number of parameters:
-    - Deeper: number of layers
-    - Wider: number of heads (must be changed with embedding dimension) such that emb_dim/n_head mod 64 = 0 (so that our A100 keeps going brr, using the tf32 tensor cores)
-
-- In the end, going wider was the most throughput efficient method to increase parameter count, and this directly translated into better results. 
-- The final choice is: n_layers=10, n_heads=16, emb_dim = 1024
-
-        
-
-
-# Final model weights
-
-**WARNING: my final "optimal" run crashed 30 mins before the submission. I'd be grateful if you could retrain from scratch and check the results then.**
-
-However, for the sake of having weights, please find them here: https://drive.google.com/file/d/1zj0gXE1s0WU9ToTmKwOi0FCs2d3XVoxk/view?usp=drive_link.
-
-
-I'll update this doc and put the true final model weights in here (when it's done training strictly for 3 hours), but that will be after the submission deadline, so feel free to ignore the link if you think that this could be cheating.
-
-UPDATE: here are the final model weights, https://drive.google.com/file/d/1h0Sa7q_L8LduwZ9cSsMvLrP8xWHJJ8NL/view?usp=sharing. Expected performance should be [val] loss=3.104, pp=22.29, acc=0.435708.
-
-
-
-# Training script and config
-
-### Dependencies
-
-
-Install dependencies: 
-
+### Install environment
+We assume you have CUDA 12.4 on your system:
 ```
-pip install -r requirements.txt
+pip install -r req.txt
 ```
 
-(Packages added to base docker image: `ipykernel`, `einops`, `beartype`)
-
-
-### Reproducing the experiment
-
-
-```sh
-python src/main.py --config src/config/final/noam_wide3.yaml 
+### Run first training (3h + evaluation unless disabled)
+```
+python src/main.py --config src/config/aaa/noam_wide4.yaml
 ```
 
-# New updates
+### Run second training (1h +  evaluation unless disabled)
+Make sure you put in the checkpoint from the last run is correctly in the config: it should be right by default. You can find the checkpoint path in the logs (on wandb)
 ```
-# install the dependencies
-pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu124
-pip install -r requirements.txt
+ python src/main.py --config src/config/aaa/second_stage_full.yaml
 ```
 
-- LoRA hyperparameters: we followed [HuggingFace advice](https://github.com/huggingface/alignment-handbook), and used r=alpha
+## Results
+### Preliminary
+At the end of pretraining, we get the following results on the `slimpajama` dataset.
+```
+train loss: 3.162
+val loss: 3.096
+perplexity: 22.10
+token_acc: 0.43719
+```
+
+### Final
+After fine-tuning, we achieve the following results on the `mathqa` dataset:
+```
+train loss: 1.320
+val loss: 1.705
+perplexity: 5.50
+token_acc: 0.026147
+```
+
+### Wandb Screenshots
+#### Pretraining
+For the pretraining, we only have validation loss (we do valuation only every 2000 steps).
+![alt text](image-2.png)
+
+#### Fine tuning
+![alt text](image-3.png)
 
 
-## Directions:
-- pretrain/finetune compute split (1h/3h, 2h/2h, 3h/1h)
-- Efficient Fine-tuning: LoRA (loha, lokr, pisa), flash_attention?
-- 
 
-## Results:
-#### pre-train:
-**1h:** 0/2389 [train] loss=3.598 [val] loss=3.432, pp=30.94, acc=0.402074 [time per itr] 1178.11ms [lr] 0.00013
-
-#### fine-tune:
