@@ -7,7 +7,7 @@ https://github.com/facebookresearch/llama/blob/main/llama/model.py
 https://github.com/mistralai/mistral-src/blob/main/one_file_ref.py
 3) Llama paper:
 https://arxiv.org/pdf/2302.13971.pdf
- 
+
 Main differences from GPT2:
 * Uses RMSNorm instead of LayerNorm
 * Uses a slightly different MLP (SwiGLU)
@@ -91,6 +91,7 @@ class LlamaAttention(CausalSelfAttention):
     def __init__(self, config, rotary_emb):
         super().__init__(config)
         self.rotary_emb = rotary_emb
+        # self.flash = True
 
 
     def forward(self, x):
@@ -159,7 +160,6 @@ class Noam(GPTBase):
         assert config.sequence_length is not None
         self.config = config
         self.tokenizer = tiktoken.get_encoding("gpt2")
-
         # create the token and position embeddings
         self.head_dim = config.n_embd // config.n_head
         self.rotary_emb = RotaryEmbedding(dim=self.head_dim)
@@ -187,7 +187,7 @@ class Noam(GPTBase):
             self.transformer.wte.weight = (
                 self.lm_head.weight
             )  # https://paperswithcode.com/method/weight-tying
-    
+
 
 
         # init all weights
