@@ -73,8 +73,12 @@ def parse_args(base_parser, args, namespace):
     parser.add_argument('--save_checkpoint_freq', default=None, type=int, required=False)
     parser.add_argument('--max_duration', default=3*60*60, type=int, required=False)
     # LoRA
-
-
+    parser.add_argument('--peft_type', default='none', choices=['lora', 'loha', 'lokr', 'none'])
+    parser.add_argument('--lora_r', default=16, type=int, required=False)
+    parser.add_argument('--lora_alpha', default=32, type=int, required=False)
+    parser.add_argument('--lora_dropout', default=0.05, type=float, required=False)
+    parser.add_argument('--init_lora_weights', default='none', type=str, choices=['pissa', 'none'])
+    
 
     # first, load config if any
     args_config, remaining = config_parser.parse_known_args()

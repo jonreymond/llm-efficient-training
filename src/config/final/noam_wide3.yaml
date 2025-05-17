@@ -1,7 +1,7 @@
 model: "noam"
 weight_tying: True
 
-compile: True
+compile: False
 grad_clip: 1.0
 save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
@@ -16,21 +16,23 @@ weight_decay: 0.1
 dataset: "mathqa" # [slimpajama, mathqa]
 
 lr: 0.00125
-#rho: 0.05
-run_prefix: "fine-2400"
+run_prefix: "ft-7500-lora"
 
-use_pretrained: "auto" #"/home/jovyan/work/llm-efficient-training/exps/slimpajama/noam/pre-2400_noam_lr0.00125_bs64x4_seqlen512/iterations=2400_eval_freq=500_grad_clip=1.0_weight_tying=True_n_head=16_n_layer=10_n_embd=1024_save_checkpoint_freq=500_seed=0/ckpt_2500.pt" # "auto"
+use_pretrained: "/home/saydalie/work/llm-training/exps/slimpajama/noam/pt-2500_noam_lr0.00125_bs64x4_seqlen512/iterations=2500_eval_freq=500_grad_clip=1.0_weight_tying=True_use_pretrained=auto_n_head=16_n_layer=10_n_embd=1024_save_checkpoint_freq=500_max_duration=3600/lora_r=8_lora_alpha=16_seed=0/ckpt.pt" # "auto"
 max_duration: 10800 # {1h: 3600, 2h: 7200, 3h: 10800, 4h: 14400}
 
-# train itr: ~1540 ms, 1 hour of training => num iterations = (1/1.54)*1*60*60 = ~2400
+# pt-train itr: ~1540 ms, 1 hour of training => num iterations = (1/1.54)*1*60*60 = ~2400
 # 1h: 2400, 2h: 4800, 3h: 7200
 
-# train itr: 1200 ms, 1 hour of training => num iterations = (1/1.2)*1*60*60 = 3000
-# 1h: 3000, 2h: 6000, 3h: 9000
-
-iterations: 2400 # needed for scheduler
+iterations: 7500 # needed for scheduler
 batch_size: 64
 acc_steps: 4
 
 eval_freq: 500
 eval_seq_prefix: "none"
+
+peft_type: "lora"
+lora_r: 4
+lora_alpha: 8
+lora_dropout: 0.05
+init_lora_weights: "pissa"

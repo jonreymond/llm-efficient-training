@@ -16,7 +16,7 @@ from optim.base import train_base
 from optim.sofia import SophiaG
 import distributed
 
-from peft import AdaLoraConfig, LoraConfig, get_peft_model
+from peft import LoKrConfig, LoraConfig, LoHaConfig, get_peft_model
 
 def get_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -118,11 +118,13 @@ def main(args):
         else:
             args.use_pretrained = None
     
-    if args.use_pretrained is not None:
+    if args.use_pretrained is not None and 'ckpt_' in args.use_pretrained:
         last_ckpt_path = args.use_pretrained
         print(f"Resuming from {last_ckpt_path}")
         # checkpoint = torch.load(os.path.join(ckpt_path, last_ckpt_path))
-        checkpoint = torch.load(last_ckpt_path)
+        checkpoint = torch.load(last_ckpt_path, weights_only=True)
+        print(checkpoint)
+        
         model_state_dict = {distributed_backend.translate_model_parameter_name_for_node(k.replace("_orig_mod.", ""))[0]:v for k,v in checkpoint['model'].items()}
         # FIXME checkpoints from compiled model have _orig_mod keyword
 
@@ -144,11 +146,22 @@ def main(args):
             scheduler_state_dict = checkpoint['scheduler']
             scheduler.load_state_dict(scheduler_state_dict)
 
+    elif args.use_pretrained is not None:
+        last_ckpt_path = args.use_pretrained
+        print(f"Load from {last_ckpt_path}")
+        checkpoint = torch.load(last_ckpt_path, weights_only=True)
+        
+        model_state_dict = {distributed_backend.translate_model_parameter_name_for_node(k.replace("_orig_mod.", ""))[0]:v for k,v in checkpoint['model'].items()}
+        # FIXME checkpoints from compiled model have _orig_mod keyword
+
+        # only load the model; ignore scheduler, optimizer, itr
+        model.load_state_dict(model_state_dict) 
+    
     if args.model in ['base', 'llama2', 'noam']: # all train functions have the same interface
         train = train_base
     else:
         raise NotImplementedError(f"No training method implemented for model type '{args.model}'.")
-
+    
     # Apply LoRA
     """
     Noam(
@@ -179,18 +192,40 @@ def main(args):
       (rotary_emb): RotaryEmbedding()
     )
     """
-    lora_config = LoraConfig(
-        r=8,
-        lora_alpha=16,
-        target_modules=["c_attn", "c_proj", "w1", "w2"],
-        lora_dropout=0.05
-    )
-    model.config.tie_word_embeddings = model.config.weight_tying # LoRA expects `tie_word_embeddings`
-    if not hasattr(model.config, "get"):
-        model.config.get = lambda key, default=None: getattr(model.config, key, default)
+    if args.peft_type == 'lora':
+        if args.init_lora_weights == 'none':
+            init_lora_weights = True
+        else:
+            init_lora_weights = args.init_lora_weights
+        lora_config = LoraConfig(
+            r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            init_lora_weights=init_lora_weights,
+            target_modules=["c_attn", "c_proj", "w1", "w2"],
+            lora_dropout=args.lora_dropout
+        )
+    elif args.peft_type == 'loha':
+        lora_config = LoHaConfig(
+            r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            target_modules=["c_attn", "c_proj", "w1", "w2"],
+            lora_dropout=args.lora_dropout
+        )
+    elif args.peft_type == 'lokr':
+        lora_config = LoKrConfig(
+            r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            target_modules=["c_attn", "c_proj", "w1", "w2"],
+            lora_dropout=args.lora_dropout
+        )
     
-    model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+    if args.peft_type != 'none':
+        model.config.tie_word_embeddings = model.config.weight_tying # LoRA expects `tie_word_embeddings`
+        if not hasattr(model.config, "get"):
+            model.config.get = lambda key, default=None: getattr(model.config, key, default)
+        
+        model = get_peft_model(model, lora_config)
+        model.print_trainable_parameters()
 
     # Training
     print(f"\nTraining model={args.model} \n{vars(args)}\n")

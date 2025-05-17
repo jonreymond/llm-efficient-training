@@ -92,15 +92,21 @@ python src/main.py --config src/config/final/noam_wide3.yaml
 
 # New updates
 ```
-# install conda
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh
-
-# create conda env with python 3.10 -- necessary for torch.compile
-conda create -n torch310 python=3.10 -y
-conda activate torch310
-
 # install the dependencies
+pip install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
-pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
 ```
+
+- LoRA hyperparameters: we followed [HuggingFace advice](https://github.com/huggingface/alignment-handbook), and used r=alpha
+
+
+## Directions:
+- pretrain/finetune compute split (1h/3h, 2h/2h, 3h/1h)
+- Efficient Fine-tuning: LoRA (loha, lokr, pisa), flash_attention?
+- 
+
+## Results:
+#### pre-train:
+**1h:** 0/2389 [train] loss=3.598 [val] loss=3.432, pp=30.94, acc=0.402074 [time per itr] 1178.11ms [lr] 0.00013
+
+#### fine-tune:
