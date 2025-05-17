@@ -7,7 +7,7 @@ https://github.com/facebookresearch/llama/blob/main/llama/model.py
 https://github.com/mistralai/mistral-src/blob/main/one_file_ref.py
 3) Llama paper:
 https://arxiv.org/pdf/2302.13971.pdf
-
+ 
 Main differences from GPT2:
 * Uses RMSNorm instead of LayerNorm
 * Uses a slightly different MLP (SwiGLU)
@@ -91,7 +91,6 @@ class LlamaAttention(CausalSelfAttention):
     def __init__(self, config, rotary_emb):
         super().__init__(config)
         self.rotary_emb = rotary_emb
-        # self.flash = True
 
 
     def forward(self, x):
@@ -160,6 +159,8 @@ class Noam(GPTBase):
         assert config.sequence_length is not None
         self.config = config
         self.tokenizer = tiktoken.get_encoding("gpt2")
+        self.valid_token_ids = set(self.tokenizer._special_tokens.values()).union(range(self.tokenizer.n_vocab))
+
         # create the token and position embeddings
         self.head_dim = config.n_embd // config.n_head
         self.rotary_emb = RotaryEmbedding(dim=self.head_dim)
@@ -233,7 +234,7 @@ class Noam(GPTBase):
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)
             loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=50256,
+                logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
             )
         else:
             # inference-time mini-optimization: only forward the lm_head on the very last position
@@ -248,3 +249,70 @@ class Noam(GPTBase):
             "logits": logits,
             "loss": loss,
         }
+
+    @torch.no_grad()
+    def generate(
+        self,
+        prompt: str,
+        max_new_tokens: int,
+        temperature: float = 1.0,
+        top_k: int = None,
+        top_p: float = None,
+        do_sample: bool = True,
+        return_text: bool = True,
+    ):
+        """
+        Args:
+            prompt (str): Input text prompt.
+            max_new_tokens (int): Number of tokens to generate.
+            temperature (float): Sampling temperature (higher = more random).
+            top_k (int or None): Top-k sampling (keep only top k tokens).
+            top_p (float or None): Top-p (nucleus) sampling (keep tokens with cumulative prob >= p).
+            do_sample (bool): Whether to sample or use greedy decoding.
+            return_text (bool): If True, decode tokens to string.
+    
+        Returns:
+            str or List[int]: Generated text (if return_text) or token IDs.
+        """
+        # Tokenize input prompt
+        input_ids = self.tokenizer.encode(prompt)
+        input_ids = torch.tensor([input_ids], dtype=torch.long, device="cuda")
+    
+        for _ in range(max_new_tokens):
+            idx_cond = input_ids[:, -self.config.sequence_length :]  # crop to block size
+            out = self.forward(idx_cond, get_logits=True)
+            logits = out["logits"]  # shape (B, 1, vocab_size)
+            logits = logits[:, -1, :] / temperature
+    
+            if top_k is not None:
+                values, _ = torch.topk(logits, top_k)
+                logits[logits < values[:, [-1]]] = float("-inf")
+    
+            if top_p is not None:
+                sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+                probs = F.softmax(sorted_logits, dim=-1)
+                cumulative_probs = torch.cumsum(probs, dim=-1)
+    
+                sorted_mask = cumulative_probs > top_p
+                sorted_mask[:, 1:] = sorted_mask[:, :-1]
+                sorted_mask[:, 0] = 0
+    
+                indices_to_remove = sorted_mask.scatter(1, sorted_indices, sorted_mask)
+                logits[indices_to_remove] = float("-inf")
+    
+            probs = F.softmax(logits, dim=-1)
+    
+            if do_sample:
+                next_token = torch.multinomial(probs, num_samples=1)  # (B, 1)
+            else:
+                next_token = torch.argmax(probs, dim=-1, keepdim=True)  # (B, 1)
+    
+            input_ids = torch.cat((input_ids, next_token), dim=1)
+    
+        if return_text:
+            # The model outputs token_ids > vocab_size some time, e.g. 50269. TODO: investigate
+            output_text = self.tokenizer.decode([tok for tok in input_ids[0].tolist() if tok in self.valid_token_ids])
+            output_text = output_text.replace("<|endoftext|>", "").strip()
+            return output_text
+        else:
+            return input_ids[0].tolist()
