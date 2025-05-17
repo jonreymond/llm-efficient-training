@@ -1,26 +1,33 @@
-# Our great improvement
-After fist stage on SlimPajama
+# Improving LLM training
+Our work is heavily based on the last year's work of [Harold Benoit](https://www.haroldbenoit.com/).
+You can see his work [here](https://github.com/HaroldBenoit/llm-efficient-training). He was able to substantially outperform the baseline.
 
-```
-0/10924 [train] loss=3.162 [val] loss=3.096, pp=22.10, acc=0.437197 [time per itr] 455.74ms [lr] 0.00000
-# LLM-baselines
-```
+## What we tried, but did not work
 
-Repository for 1st place win in the [LLM training and architecture exploration hackathon](https://lauzhack-llms-genai-2024.devpost.com/) organized by [LauzHack](https://lauzhack.com/) and the [MLO lab](https://www.epfl.ch/labs/mlo/). 
+## What we tried, and worked
+### Cycle scheduler
+We used a cycle scheduler with a cosine annealing schedule. This means that learning rate starts, small, is quickly 
 
-I won 1.5k and a trip to Huawei HQ in China!
+![alt text](image-1.png)
+## Bug Fix
 
-The ideas is to train the best performing language model on [Slimpajama](https://huggingface.co/datasets/DKYoon/SlimPajama-6B) with 3 hours of compute on a A100. You have to start with a fairly simple codebase: [llm-baselines](https://github.com/epfml/llm-baselines). 
 
-# Idea and approach
 
-Two separate ideas:
+
+
+
+
+
+
+
+
 
 
 ## Better optimizer (failed)
 
 - I tried the (infamous) second-order optimizer [Sophia](https://arxiv.org/abs/2305.14342)
     - It didn't make a meaningiful difference during training, even at multiple model scales and architectures. Conclusion: it was slower (both in terms of throughput and final performance) than just using fused AdamW.
+
 
 ## Bitter lesson, GPUs go brrrr (successful)
 
