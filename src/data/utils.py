@@ -7,7 +7,7 @@ from .wikitext import get_wikitext_data
 from .arxiv import get_arxiv_2000, get_arxiv_full
 from .openwebtext2 import get_openwebtext2_data
 from .slimpajama import get_slimpajama_data
-from .benchmarks import get_mathqa
+from .benchmarks import get_mathqa, get_medqa
 
 
 def get_dataset(args) -> Dict[str, np.ndarray]:
@@ -34,6 +34,8 @@ def get_dataset(args) -> Dict[str, np.ndarray]:
         return get_slimpajama_data()
     if args.dataset == "mathqa":
         return get_mathqa()
+    if args.dataset == "medqa":
+        return get_medqa()
     else:
         raise NotImplementedError(f"Unknow dataset key '{args.dataset}'")
 

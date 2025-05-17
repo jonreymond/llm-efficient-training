@@ -153,7 +153,7 @@ def train_base(model, opt, data, data_seed, scheduler, iterations, acc_steps, ba
                 logits = outputs["logits"]
                 samp_dist = torch.distributions.Categorical(logits=logits)
                 y_sample = samp_dist.sample()
-                loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y_sample.view(-1), ignore_index=-1)
+                loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y_sample.view(-1), ignore_index=50256)
                 loss =  loss / acc_steps
                 loss.backward()
                 substep += 1

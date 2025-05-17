@@ -1,4 +1,10 @@
+# Our great improvement
+After fist stage on SlimPajama
+
+```
+0/10924 [train] loss=3.162 [val] loss=3.096, pp=22.10, acc=0.437197 [time per itr] 455.74ms [lr] 0.00000
 # LLM-baselines
+```
 
 Repository for 1st place win in the [LLM training and architecture exploration hackathon](https://lauzhack-llms-genai-2024.devpost.com/) organized by [LauzHack](https://lauzhack.com/) and the [MLO lab](https://www.epfl.ch/labs/mlo/). 
 

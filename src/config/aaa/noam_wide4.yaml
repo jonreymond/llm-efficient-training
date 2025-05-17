@@ -6,18 +6,17 @@ grad_clip: 1.0
 save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
 wandb_group: "final"
+run_prefix: "better_scheduler"
 wandb: True
 n_layer: 10
 n_embd: 1024
 n_head: 16
 opt: "adamw"
+scheduler: "cycle"
 weight_decay: 0.1
-
 
 lr: 0.0008
 #rho: 0.05
-run_prefix: "final_wide4"
-
 
 iterations: 10000 ## train itr: 1200 ms, 3 hours of training => num iterations = (1/1.23)*3*60*60 = 8780
 batch_size: 64
@@ -25,4 +24,3 @@ acc_steps: 4
 
 eval_freq: 2000
 eval_seq_prefix: "none"
-
