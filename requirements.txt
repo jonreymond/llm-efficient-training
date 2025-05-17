@@ -4,7 +4,8 @@ torch==2.0.0+cu118
 torchaudio==2.0.0+cu118
 torchvision==0.15.0+cu118
 tqdm==4.65.0
-transformers
+transformers==4.51.3
+peft==0.15.2
 wandb
 datasets
 zstandard

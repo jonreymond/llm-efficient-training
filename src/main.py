@@ -16,6 +16,7 @@ from optim.base import train_base
 from optim.sofia import SophiaG
 import distributed
 
+from peft import AdaLoraConfig, LoraConfig, get_peft_model
 
 def get_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -149,18 +150,45 @@ def main(args):
 
     print(f"\nTraining model={args.model} \n{vars(args)}\n")
 
-    stats = train(model, opt, data, args.data_seed, scheduler, args.iterations, args.acc_steps, args.batch_size, args.sequence_length, 
-                  eval_freq=args.eval_freq, 
-                  distributed_backend=distributed_backend,
-                  ckpt_path=f"{ckpt_path}/ckpt.pt", itr=itr, rng_state_dict=rng_state_dict, extra_args=args)
-    
-    args.device = None
-    args.dtype = None
-    stats['args'] = vars(args)
-    if distributed_backend.is_master_process():
-        with open(f"{ckpt_path}/summary.json", "w") as fs:
-            json.dump(stats, fs)
-    distributed_backend.finalize()
+    print(model)
+
+    print([(name, type(module)) for name, module in model.named_modules()])
+
+    lora_config = LoraConfig(
+        r=8,
+        lora_alpha=16,
+        target_modules=["c_attn", "c_proj", "w1", "w2"],
+        lora_dropout=0.05
+    )
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
+
+    # stats = train(
+    #     model=model,
+    #     opt=opt,
+    #     data=data,
+    #     data_seed=args.data_seed, 
+    #     scheduler=scheduler, 
+    #     iterations=args.iterations,
+    #     acc_steps=args.acc_steps,
+    #     batch_size=args.batch_size, 
+    #     sequence_length=args.sequence_length,
+    #     eval_freq=args.eval_freq, 
+    #     ckpt_path=f"{ckpt_path}/ckpt.pt", 
+    #     distributed_backend=distributed_backend, 
+    #     extra_args=args, 
+    #     itr=itr, 
+    #     rng_state_dict=rng_state_dict,
+    #     max_duration=args.max_duration
+    # )
+            
+    # args.device = None
+    # args.dtype = None
+    # stats['args'] = vars(args)
+    # if distributed_backend.is_master_process():
+    #     with open(f"{ckpt_path}/summary.json", "w") as fs:
+    #         json.dump(stats, fs)
+    # distributed_backend.finalize()
 
 
 if __name__ == "__main__":

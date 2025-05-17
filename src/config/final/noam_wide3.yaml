@@ -1,7 +1,7 @@
 model: "noam"
 weight_tying: True
 
-compile: True
+compile: False
 grad_clip: 1.0
 save_checkpoint_freq: 500
 wandb_project: "lauzhack-llm"
@@ -19,6 +19,8 @@ lr: 0.00125
 #rho: 0.05
 run_prefix: "pre-2400"
 
+use_pretrained: "auto"
+max_duration: 10800 # {1h: 3600, 2h: 7200, 3h: 10800, 4h: 14400}
 
 # train itr: ~1540 ms, 1 hour of training => num iterations = (1/1.54)*1*60*60 = ~2400
 # 1h: 2400, 2h: 4800, 3h: 7200
@@ -26,7 +28,7 @@ run_prefix: "pre-2400"
 # train itr: 1200 ms, 1 hour of training => num iterations = (1/1.2)*1*60*60 = 3000
 # 1h: 3000, 2h: 6000, 3h: 9000
 
-iterations: 3000
+iterations: 2400 # needed for scheduler
 batch_size: 64
 acc_steps: 4
 
