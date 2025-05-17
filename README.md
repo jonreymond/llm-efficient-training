@@ -20,9 +20,6 @@ We pretrain the model on `slimpajama` for 3 hours and then fine tune on `mathqa`
 ### Bug Fix
 The cross entropy loss is calculated incorrectly in the baseline, the ignore index that is set (-1) does not correspond to the token that is used for padding. This lead to mode only focusing on pad tokens during fine tuning and achieving incredibly low loss (there are a lot of padding tokens).
 
-### Decoding Method
-We implemented 5-shot evaluation on the held-out 
-
 ## What we tried, but did not work
 ### PEFT and LoRA
 For fine-tuning on `mathqa`, we implemented LoRA and its variants – Loha, Lokr, but we found Loha and Lokr decreased the training process by x%. LoRA had a similar training speed as full-finetuning, but performed much worse on the validation loss. We followed the hyperparameters form [alignment-handbook](https://github.com/huggingface/alignment-handbook)
